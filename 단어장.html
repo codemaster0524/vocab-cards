@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>단어 암기 카드</title>
+  
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='50%' x='50%' text-anchor='middle' dominant-baseline='central' font-size='80'>📚</text></svg>">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+/* 초기화 위젯용 스타일 추가 */
+.reset-input {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 15px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.reset-input:focus {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.02);
+}
+
+.reset-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: white;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .widget {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .widget:hover {
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .widget::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .widget:hover::before {
+      opacity: 1;
+    }
+
+    .widget h2 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dashboard-title {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+      background: repeating-linear-gradient(
+        to right,
+        #ff6b6b 0%, #feca57 20%, #48dbfb 40%, #1dd1a1 60%, #ff6b6b 80%, #feca57 100%
+      );
+      background-size: 400% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 12s linear infinite;
+    }
+
+    @keyframes shine {
+      0% { background-position: 0% center; }
+      100% { background-position: 100% center; }
+    }
+
+    /* 알림 스타일 */
+    .alert {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      z-index: 10000;
+      transform: translateX(400px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .alert.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .alert.success {
+      background: linear-gradient(135deg, #4caf50, #45a049);
+    }
+
+    .alert.info {
+      background: linear-gradient(135deg, #2196f3, #1976d2);
+    }
+
+    .alert.error {
+      background: linear-gradient(135deg, #f44336, #d32f2f);
+    }
+
+    .card-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .flashcard {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      width: 100%;
+      max-width: 400px;
+      height: 200px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      text-align: center;
+      padding: 20px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      margin: 0 auto 15px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flashcard:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+
+    .flashcard::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+      opacity: 0.7;
+    }
+
+    .card-side {
+      transition: opacity 0.3s ease;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      margin: 5px;
+      font-weight: bold;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    .btn-nav {
+      background: rgba(33, 150, 243, 0.6);
+    }
+
+    .btn-action {
+      background: rgba(76, 175, 80, 0.6);
+    }
+
+    .btn-status {
+      background: rgba(255, 193, 7, 0.6);
+    }
+
+    .btn-unknown {
+      background: rgba(244, 67, 54, 0.6);
+    }
+
+    .btn-doubt {
+      background: rgba(255, 152, 0, 0.6);
+    }
+
+    .btn-known {
+      background: rgba(76, 175, 80, 0.6);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .status-display {
+      font-size: 1rem;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+      transition: width 0.3s ease;
+    }
+
+    .info-widget {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-top: 20px; /* 👈 이 줄 추가 */
+    }
+
+    .info-widget h3 {
+      color: #4ecdc4;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .feature-note {
+      background: rgba(76, 175, 80, 0.2);
+      border-left: 4px solid #4caf50;
+      padding: 10px 15px;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .stat-item {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 15px 10px;
+      border-radius: 10px;
+    }
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #4ecdc4;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      margin-top: 5px;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+      
+      .dashboard-title {
+        font-size: 2rem;
+      }
+
+      .flashcard {
+        height: 150px;
+        font-size: 1.2rem;
+      }
+
+      .buttons {
+        justify-content: center;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- 메인 카드 위젯 -->
+    <div class="widget">
+      <div class="dashboard-title">📚 단어 암기 카드</div>
+      
+      <div class="card-container">
+        <div class="flashcard" onclick="flipCard()" id="flashcard">
+          <div class="card-side" id="cardContent">Loading...</div>
+        </div>
+        
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+        </div>
+        
+        <div class="status-display" id="statusDisplay">상태: 모름 | 카드: 0/0</div>
+      </div>
+
+      <div class="buttons">
+        <button class="btn btn-nav" onclick="prevCard()">⬅️ 이전</button>
+        <button class="btn btn-action" onclick="shuffleCards()">🔀 셔플</button>
+        <button class="btn btn-nav" onclick="nextCard()">다음 ➡️</button>
+      </div>
+
+      <div class="buttons">
+        <button class="btn btn-unknown" onclick="setStatus('모름')">❌ 모름</button>
+        <button class="btn btn-doubt" onclick="setStatus('의심')">❓ 의심</button>
+        <button class="btn btn-known" onclick="setStatus('암기함')">✅ 암기함</button>
+        <button class="btn btn-action" onclick="speak()">🔊 읽기</button>
+      </div>
+    </div>
+
+    <!-- 학습 통계 위젯 -->
+    <div class="widget">
+      <h2>📊 학습 통계</h2>
+      
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number" id="totalCards">0</div>
+          <div class="stat-label">총 카드</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="knownCards">0</div>
+          <div class="stat-label">암기함</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="doubtCards">0</div>
+          <div class="stat-label">의심</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="unknownCards">0</div>
+          <div class="stat-label">모름</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="progressPercent">0%</div>
+          <div class="stat-label">진행률</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="studyStreak">0</div>
+          <div class="stat-label">연속 학습</div>
+        </div>
+      </div>
+
+      <div class="info-widget">
+        <h3>🎯 학습 목표</h3>
+        <p>• 모든 단어를 '암기함' 상태로 만들기</p>
+        <p>• 매일 꾸준히 복습하기</p>
+        <p>• 의심스러운 단어는 반복 학습하기</p>
+      </div>
+    </div>
+
+    <!-- 사용법 위젯 -->
+    <div class="widget">
+      <h2>📖 사용법 가이드</h2>
+      
+      <div class="info-widget">
+        <h3>🎮 기본 조작</h3>
+        <p>• <strong>카드 클릭</strong>: 앞면/뒤면 전환</p>
+        <p>• <strong>이전/다음</strong>: 카드 넘기기</p>
+        <p>• <strong>셔플</strong>: 카드 순서 섞기</p>
+        <p>• <strong>읽기</strong>: 음성으로 단어 읽기</p>
+      </div>
+
+      <div class="info-widget">
+        <h3>📝 상태 관리</h3>
+        <p>• <strong>❌ 모름</strong>: 아직 모르는 단어</p>
+        <p>• <strong>❓ 의심</strong>: 애매한 단어</p>
+        <p>• <strong>✅ 암기함</strong>: 완전히 외운 단어</p>
+      </div>
+
+      <div class="feature-note">
+        💡 <strong>팁:</strong> 키보드 방향키로도 카드를 넘길 수 있고, 스페이스바로 카드를 뒤집을 수 있습니다!
+      </div>
+    </div>
+
+    <!-- 단어 목록 위젯 -->
+    <div class="widget">
+      <h2>📝 단어 목록 관리</h2>
+      
+      <div class="info-widget">
+        <h3>📚 현재 단어집</h3>
+        <p>영어 기초 단어 40개가 포함되어 있습니다.</p>
+      </div>
+
+      <div class="buttons">
+        <button class="btn btn-nav" onclick="showOnlyUnknown()">❌ 모르는 것만</button>
+        <button class="btn btn-nav" onclick="showAll()">📋 전체 보기</button>
+      </div>
+
+      <div class="info-widget">
+        <h3>🚀 효과적인 학습법</h3>
+        <p>• 하루에 10-15개씩 꾸준히 학습</p>
+        <p>• '모름' 카드를 우선적으로 반복</p>
+        <p>• 정기적으로 셔플하여 순서 암기 방지</p>
+        <p>• 음성 기능으로 발음도 함께 학습</p>
+      </div>
+    </div>
+    <!-- 학습 데이터 초기화 위젯 -->
+    <div class="widget">
+      <h2>♻️ 학습 데이터 초기화</h2>
+      
+      <div class="info-widget">
+        <h3>🔄 초기화 기능</h3>
+        <p>• 모든 단어의 학습 상태를 초기화합니다</p>
+        <p>• '암기함', '의심', '모름' 상태가 모두 리셋됩니다</p>
+        <p>• 학습 통계도 함께 초기화됩니다</p>
+      </div>
+
+      <input type="text" id="reset-confirm" class="reset-input" placeholder="RESET을 입력하세요" />
+      <button class="btn btn-action" onclick="resetLearningData()">🔄 학습 데이터 초기화</button>
+      
+      <div style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">
+        ※ 정확히 <strong>RESET</strong> 입력 시에만 초기화됩니다.<br>
+        모든 단어의 학습 진행상황이 삭제됩니다.
+      </div>
+    </div>
+  </div>
+
+<script>
+    let words = [];
+    let currentIndex = 0;
+    let isFlipped = false;
+    let filteredWords = [];
+    let showingFiltered = false;
+
+    function showAlert(message, type = 'success') {
+      const existingAlert = document.querySelector('.alert');
+      if (existingAlert) {
+        existingAlert.remove();
+      }
+
+      const alert = document.createElement('div');
+      alert.className = `alert ${type}`;
+      alert.textContent = message;
+      document.body.appendChild(alert);
+
+      setTimeout(() => alert.classList.add('show'), 100);
+
+      setTimeout(() => {
+        alert.classList.remove('show');
+        setTimeout(() => alert.remove(), 300);
+      }, 3000);
+    }
+
+    function updateCard() {
+      if (words.length === 0) return;
+      
+      const activeWords = showingFiltered ? filteredWords : words;
+      if (activeWords.length === 0) {
+        document.getElementById('flashcard').innerHTML = '<div class="card-side">필터된 카드가 없습니다</div>';
+        return;
+      }
+
+      const currentWord = activeWords[currentIndex];
+      const card = document.getElementById('cardContent');
+      
+      card.textContent = isFlipped ? currentWord.back : currentWord.front;
+      
+      // 상태 표시 업데이트
+      const total = activeWords.length;
+      const cardNum = currentIndex + 1;
+      document.getElementById('statusDisplay').textContent = 
+        `상태: ${currentWord.status || '모름'} | 카드: ${cardNum}/${total}`;
+      
+      // 진행률 바 업데이트
+      const progress = ((currentIndex + 1) / total) * 100;
+      document.getElementById('progressBar').style.width = `${progress}%`;
+    }
+
+    function updateStats() {
+      const total = words.length;
+      const known = words.filter(w => w.status === '암기함').length;
+      const doubt = words.filter(w => w.status === '의심').length;
+      const unknown = words.filter(w => !w.status || w.status === '모름').length;
+      const progressPercent = total > 0 ? Math.round((known / total) * 100) : 0;
+      
+      document.getElementById('totalCards').textContent = total;
+      document.getElementById('knownCards').textContent = known;
+      document.getElementById('doubtCards').textContent = doubt;
+      document.getElementById('unknownCards').textContent = unknown;
+      document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+      document.getElementById('studyStreak').textContent = '1'; // 임시값
+    }
+
+    function flipCard() {
+      isFlipped = !isFlipped;
+      updateCard();
+    }
+
+    function nextCard() {
+      const activeWords = showingFiltered ? filteredWords : words;
+      if (activeWords.length === 0) return;
+      
+      currentIndex = (currentIndex + 1) % activeWords.length;
+      isFlipped = false;
+      updateCard();
+    }
+
+    function prevCard() {
+      const activeWords = showingFiltered ? filteredWords : words;
+      if (activeWords.length === 0) return;
+      
+      currentIndex = (currentIndex - 1 + activeWords.length) % activeWords.length;
+      isFlipped = false;
+      updateCard();
+    }
+
+    function shuffleCards() {
+      const activeWords = showingFiltered ? filteredWords : words;
+      if (activeWords.length === 0) return;
+
+      for (let i = activeWords.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [activeWords[i], activeWords[j]] = [activeWords[j], activeWords[i]];
+      }
+      currentIndex = 0;
+      isFlipped = false;
+      updateCard();
+      showAlert('🔀 카드가 섞였습니다!', 'info');
+    }
+
+function setStatus(status) {
+  const activeWords = showingFiltered ? filteredWords : words;
+  if (activeWords.length === 0) return;
+
+  const currentWord = activeWords[currentIndex];
+  currentWord.status = status;
+
+  // ✅ 자동 저장 추가
+  localStorage.setItem('flashcardStatus', JSON.stringify(words));
+
+  updateCard();
+  updateStats();
+
+  const statusEmoji = {
+    '모름': '❌',
+    '의심': '❓',
+    '암기함': '✅'
+  };
+
+  showAlert(`${statusEmoji[status]} ${status}으로 설정되었습니다!`, 'success');
+}
+
+    function speak() {
+      const activeWords = showingFiltered ? filteredWords : words;
+      if (activeWords.length === 0) return;
+      
+      const currentWord = activeWords[currentIndex];
+      const text = isFlipped ? currentWord.back : currentWord.front;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = isFlipped ? 'ko-KR' : 'en-US';
+      utterance.rate = 0.8;
+      speechSynthesis.speak(utterance);
+    }
+
+    // 새로운 초기화 함수 (RESET 입력 방식)
+    function resetLearningData() {
+      const input = document.getElementById('reset-confirm').value.trim();
+      
+      if (input === 'RESET') {
+        words.forEach(word => {
+          delete word.status;
+        });
+
+    localStorage.removeItem('flashcardStatus');
+
+        updateCard();
+        updateStats();
+        
+        // 입력칸 초기화
+        document.getElementById('reset-confirm').value = '';
+        
+        showAlert('🔄 학습 데이터가 완전히 초기화되었습니다!', 'success');
+      } else {
+        showAlert('❌ RESET을 정확히 입력해야 합니다.', 'error');
+      }
+    }
+
+    function showOnlyUnknown() {
+      filteredWords = words.filter(w => !w.status || w.status === '모름');
+      if (filteredWords.length === 0) {
+        showAlert('❌ 모르는 카드가 없습니다!', 'error');
+        return;
+      }
+      showingFiltered = true;
+      currentIndex = 0;
+      isFlipped = false;
+      updateCard();
+      showAlert(`❌ 모르는 카드 ${filteredWords.length}개만 표시합니다`, 'info');
+    }
+
+    function showAll() {
+      showingFiltered = false;
+      filteredWords = [];
+      currentIndex = 0;
+      isFlipped = false;
+      updateCard();
+      showAlert('📋 전체 카드를 표시합니다', 'info');
+    }
+
+function loadWords() {
+  const saved = localStorage.getItem('flashcardStatus');
+  if (saved) {
+    words = JSON.parse(saved);
+  } else {
+    words = [
+      { front: "include", back: "포함하다" },
+      { front: "produce", back: "생산하다, 만들어내다, 초래하다, 농산물" },
+      { front: "belief", back: "믿음, 신념, 신앙" },
+      { front: "similar", back: "비슷한, 유사한" },
+      { front: "moment", back: "순간, 중요성" },
+      { front: "situation", back: "상황, 위치" },
+      { front: "improve", back: "개선하다, 향상하다" },
+      { front: "increase", back: "증가하다, 증가시키다, 증가, 인상" },
+      { front: "decrease", back: "감소하다, 감소시키다, 감소, 축소" },
+      { front: "share", back: "나누다, 공유하다, 몫" },
+      { front: "emotion", back: "감정, 정서" },
+      { front: "common", back: "흔한, 보통의, 공통의" },
+      { front: "recover", back: "회복하다, 복구하다" },
+      { front: "advanced", back: "진보한, 상급의" },
+      { front: "indifferent", back: "무관심한" },
+      { front: "reject", back: "거절하다, 거부하다" },
+      { front: "refuse", back: "거절하다, 거부하다" },
+      { front: "accept", back: "받아들이다, 수락하다" },
+      { front: "experience", back: "경험하다, 경험" },
+      { front: "certain", back: "확실한, 확신하는, 어떤" },
+      { front: "consider", back: "고려하다, ~으로 여기다" },
+      { front: "supply", back: "공급하다, 제공하다, 공급" },
+      { front: "provide", back: "공급하다, 제공하다, 대비하다" },
+      { front: "practical", back: "실용적인, 실제적인" },
+      { front: "express", back: "표현하다, 나타내다, 속달로 보내다, 급행의, 신속한, 급행, 속달" },
+      { front: "quantity", back: "양, 수량" },
+      { front: "superior", back: "뛰어난, 우월한, 상급의, 윗사람, 상급자" },
+      { front: "inferior", back: "열등한, 하위의, 손 아랫사람, 하급자" },
+      { front: "seek", back: "찾다, 추구하다, 청하다" },
+      { front: "aim", back: "목표, 목적, 목표하다, 겨냥하다" },
+      { front: "fade", back: "희미해지다, 사라지다" },
+      { front: "disappear", back: "사라지다, 없어지다" },
+      { front: "emerge", back: "나타나다, 모습을 드러내다, (생각 사실 등이) 드러나다" },
+      { front: "grief", back: "슬픔, 비탄" },
+      { front: "slight", back: "약간의, 하찮은" },
+      { front: "success", back: "성공, 성공작" },
+      { front: "failure", back: "실패, 실패작, 고장" },
+      { front: "run into", back: "~ 와 우연히 만나다, ~ 와 충돌하다" },
+      { front: "depend on", back: "~ 에 의존하다, ~ 에 달려있다" },
+      { front: "carry out", back: "~ 을 실행하다, ~ 을 완료하다" }
+    ];
+  }
+
+  currentIndex = 0;
+  isFlipped = false;
+  showingFiltered = false;
+  updateCard();
+  updateStats();
+}
+
+    // 키보드 이벤트 처리
+    document.addEventListener('keydown', function(e) {
+      switch(e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          prevCard();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          nextCard();
+          break;
+        case ' ':
+        case 'ArrowUp':
+        case 'ArrowDown':
+          e.preventDefault();
+          flipCard();
+          break;
+        case '1':
+          setStatus('모름');
+          break;
+        case '2':
+          setStatus('의심');
+          break;
+        case '3':
+          setStatus('암기함');
+          break;
+        case 's':
+          speak();
+          break;
+      }
+    });
+
+    // 페이지 로드 시 실행
+    window.addEventListener('load', function() {
+      loadWords();
+      setTimeout(() => {
+        showAlert('📚 단어 암기 카드에 오신 것을 환영합니다!', 'info');
+      }, 500);
+      setTimeout(() => {
+        showAlert('💡 키보드 방향키와 스페이스바를 사용해보세요!', 'info');
+      }, 3000);
+    });
+</script>
+</body>
+</html>

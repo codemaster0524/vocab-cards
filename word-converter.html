@@ -30,11 +30,11 @@
   </style>
 </head>
 <body>
-  <h2>단어 리스트 → JSON 변환기</h2>
-  <textarea id="input" placeholder="단어 리스트를 여기에 붙여넣으세요 (단어-뜻 순서)"></textarea>
+  <h2>📘 단어 리스트 → JSON 변환기</h2>
+  <textarea id="input" placeholder="예:&#10;include&#10;포함하다&#10;produce&#10;생산하다, 만들어내다"></textarea>
   <br>
   <button onclick="convert()">JSON으로 변환</button>
-  <h3>결과 (복사해서 words.json으로 저장하세요):</h3>
+  <h3>📋 결과 (복사해서 words.json으로 저장하세요):</h3>
   <pre id="output"></pre>
 
   <script>
@@ -54,7 +54,8 @@
         }
       }
 
-      document.getElementById("output").textContent = JSON.stringify(result, null, 2);
+      const jsonOutput = JSON.stringify(result, null, 2);
+      document.getElementById("output").textContent = jsonOutput;
     }
   </script>
 </body>
